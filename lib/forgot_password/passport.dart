@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:mo_pay/forgot_password/id_verify.dart';
 import 'package:mo_pay/forgot_password/security_question.dart';
@@ -10,6 +11,37 @@ class Passport extends StatefulWidget {
 }
 
 class _PassportState extends State<Passport> {
+
+  final TextEditingController _controller = TextEditingController();
+
+  bool saving = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      saving = true;
+    });
+    try {
+      if (_controller.text.trim().isNotEmpty) {
+        await FirebaseFirestore.instance.collection('passport').add({
+          'passportNumber': _controller.text.trim(),
+          'createdAt': FieldValue.serverTimestamp()
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed $e'))
+      );
+    } finally {
+      if (mounted) {setState(() => saving = false,);}
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -56,22 +88,41 @@ class _PassportState extends State<Passport> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
-                    Container(
-                      alignment: Alignment.center,
+                    SizedBox(
                       height: 40,
                       width: 40,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(100),
-                        border: Border.all(color: Colors.white),
-                      ),
-                      child: Text(
-                        '2/3',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400
-                        ),
-                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          CircularProgressIndicator(
+                            value: 0.66,
+                            valueColor: AlwaysStoppedAnimation(Colors.white),
+                            backgroundColor: Color.fromRGBO(242, 242, 242, 0.5),
+                            strokeWidth: 2,
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '2',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400
+                                ),
+                              ),
+                              Text(
+                                '/3',
+                                style: TextStyle(
+                                  color: Color.fromRGBO(159, 159, 159, 1),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      )
                     ),
                   ],
                 ),
@@ -155,6 +206,7 @@ class _PassportState extends State<Passport> {
                   ),
                   SizedBox(height: 20,),
                   TextField(
+                    controller: _controller,
                     decoration: InputDecoration(
                       hintText: 'Please Enter Passport Number',
                       border: OutlineInputBorder(
@@ -164,12 +216,15 @@ class _PassportState extends State<Passport> {
                   ),
                   SizedBox(height: 200,),
                   GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const SecurityQuestion(),
-                        )
-                      );
+                    onTap: () async {
+                      if (!saving) {
+                        await _save();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const SecurityQuestion(),
+                          )
+                        );
+                      }
                     },
                     child: Container(
                       height: 56,

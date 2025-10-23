@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:mo_pay/forgot_password/new_password.dart';
 
@@ -9,6 +11,47 @@ class SecurityQuestion extends StatefulWidget {
 }
 
 class _SecurityQuestionState extends State<SecurityQuestion> {
+
+  final TextEditingController _colorController = TextEditingController();
+  final TextEditingController _foodController = TextEditingController();
+  final TextEditingController _personController = TextEditingController();
+
+  bool saving = false;
+
+  @override
+  void dispose() {
+    _colorController.dispose();
+    _foodController.dispose();
+    _personController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      saving = true;
+    });
+    try {
+      if (
+        _colorController.text.trim().isNotEmpty||
+        _foodController.text.trim().isNotEmpty||
+        _personController.text.trim().isNotEmpty
+      ) {
+        await FirebaseFirestore.instance.collection('securityQ').add({
+          'Color': _colorController.text.trim(),
+          'Food': _foodController.text.trim(),
+          'Person': _personController.text.trim(),
+          'createdAt': FieldValue.serverTimestamp()
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed $e'))
+      );
+    } finally {
+      if (mounted) {setState(() => saving = false,);}
+    }
+  }
+
   int expandedIndex = 1;
   @override
   Widget build(BuildContext context) {
@@ -108,6 +151,7 @@ class _SecurityQuestionState extends State<SecurityQuestion> {
                             title: 'What is your favourite color?', 
                             index: 1,
                             expandedChild: TextField(
+                              controller: _colorController,
                               maxLines: 4,
                               decoration: const InputDecoration(
                                 hintText: 'Type your answer here...', 
@@ -140,6 +184,7 @@ class _SecurityQuestionState extends State<SecurityQuestion> {
                             title: 'What is your favourite food?', 
                             index: 0,
                             expandedChild: TextField(
+                              controller: _foodController,
                               maxLines: 4,
                               decoration: const InputDecoration(
                                 hintText: 'Type your answer here...', 
@@ -172,6 +217,7 @@ class _SecurityQuestionState extends State<SecurityQuestion> {
                             title: 'What is your favourite person?', 
                             index: 0,
                             expandedChild: TextField(
+                              controller: _personController,
                               maxLines: 4,
                               decoration: const InputDecoration(
                                 hintText: 'Type your answer here...', 
@@ -189,12 +235,15 @@ class _SecurityQuestionState extends State<SecurityQuestion> {
                     ),
                     SizedBox(height: 130,),
                     GestureDetector(
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const NewPassword(),
-                          )
-                        );
+                      onTap: () async {
+                        if (!saving) {
+                          await _save();
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const NewPassword(),
+                            )
+                          );
+                        }
                       },
                       child: Container(
                         height: 56,

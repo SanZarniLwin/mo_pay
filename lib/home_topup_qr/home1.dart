@@ -570,13 +570,19 @@ class _Home1State extends State<Home1> {
     );
   }
 
-  TextStyle textStyle5() => TextStyle(fontSize: 12,fontWeight: FontWeight.w400,color: Color.fromRGBO(49, 49, 49, 1));
+  TextStyle textStyle5() {
+    return TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
+      color: Color.fromRGBO(49, 49, 49, 1)
+    );
+  }
 
   TextStyle textStyle4() {
     return TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: Color.fromRGBO(49, 49, 49, 1)
-                    );
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: Color.fromRGBO(49, 49, 49, 1)
+    );
   }
 }

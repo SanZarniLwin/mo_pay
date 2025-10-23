@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:mo_pay/forgot_password/passport.dart';
 import 'package:mo_pay/forgot_password/security_question.dart';
@@ -10,6 +11,10 @@ class IdVerify extends StatefulWidget {
 }
 
 class _IdVerifyState extends State<IdVerify> {
+
+  final TextEditingController _controller = TextEditingController();
+
+  bool saving = false;
   
   int num = 1;
   String division = "Kachin";
@@ -21,6 +26,32 @@ class _IdVerifyState extends State<IdVerify> {
     'Magway', 'Mandalay', 'Mon', 'Rakhine', 'Yangon', 'Shan', 'Ayeyarwady'
   ];
   final List<String> nationalities = ['N', 'E'];
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      saving = true;
+    });
+    try {
+      if (_controller.text.trim().isNotEmpty) {
+        await FirebaseFirestore.instance.collection('NRC_Number').add({
+          'NRC_Number': ('$num/$division($nationality)${_controller.text.trim()}'),
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed $e'))
+      );
+    } finally {
+      if (mounted) {setState(() => saving =false,);}
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -256,6 +287,7 @@ class _IdVerifyState extends State<IdVerify> {
                   ),
                   SizedBox(height: 20,),
                   TextField(
+                    controller: _controller,
                     decoration: InputDecoration(
                       hintText: 'Please Enter NRC Number',
                       border: OutlineInputBorder(
@@ -265,12 +297,15 @@ class _IdVerifyState extends State<IdVerify> {
                   ),
                   SizedBox(height: 150,),
                   GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const SecurityQuestion(),
-                        )
-                      );
+                    onTap: () async {
+                      if (!saving) {
+                        await _save();
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const SecurityQuestion(),
+                          )
+                        );
+                      }
                     },
                     child: Container(
                       height: 56,

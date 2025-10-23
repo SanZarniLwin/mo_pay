@@ -1,5 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:mo_pay/home_topup_qr/home1.dart';
+import 'package:mo_pay/registration_and_login/registration.dart';
 
 class NewPassword extends StatefulWidget {
   const NewPassword({super.key});
@@ -11,8 +12,46 @@ class NewPassword extends StatefulWidget {
 class _NewPasswordState extends State<NewPassword> {
   
   String activeField = "new";
-  final TextEditingController controllerNPw = TextEditingController();
-  final TextEditingController controllerCPw = TextEditingController();
+  final TextEditingController _controllerNPw = TextEditingController();
+  final TextEditingController _controllerCPw = TextEditingController();
+
+  bool saving = false;
+
+  @override
+  void dispose() {
+    _controllerNPw.dispose();
+    _controllerCPw.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      saving = true;
+    });
+    try {
+      if (
+        _controllerNPw.text.trim() == _controllerCPw.text.trim() &&
+        _controllerNPw.text.trim().isNotEmpty&&
+        _controllerCPw.text.trim().isNotEmpty
+      ) {
+        await FirebaseFirestore.instance.collection('newpassword').add({
+          'NewPassword': _controllerNPw.text.trim(),
+          'ConfirmPassword': _controllerCPw.text.trim(),
+          'createdAt': FieldValue.serverTimestamp()
+        });
+      }
+      if (_controllerNPw.text.trim() != _controllerCPw.text.trim()) {
+        throw Exception('Passwords need to be the same');
+      }
+      _passwordUpdate();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed $e'))
+      );
+    } finally {
+      if (mounted) {setState(() => saving = false,);}
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +149,7 @@ class _NewPasswordState extends State<NewPassword> {
                     ),
                   ),
                   TextField(
-                    controller: controllerNPw,
+                    controller: _controllerNPw,
                     readOnly: true,
                     onTap: () {
                       setState(() {
@@ -131,7 +170,7 @@ class _NewPasswordState extends State<NewPassword> {
                     ),
                   ),
                   TextField(
-                    controller: controllerCPw,
+                    controller: _controllerCPw,
                     readOnly: true,
                     onTap: () {
                       setState(() {
@@ -323,7 +362,11 @@ class _NewPasswordState extends State<NewPassword> {
                   children: [
                     Expanded(
                       child: GestureDetector(
-                        onTap: () => _passwordUpdate(),
+                        onTap: () async {
+                          if (!saving) {
+                            await _save();
+                          }
+                        },
                         child: Container(
                           height: 50,
                           alignment: Alignment.center,
@@ -389,21 +432,21 @@ class _NewPasswordState extends State<NewPassword> {
   void onNumberPressed(String number) {
     setState(() {
       if (activeField == 'new') {
-        controllerNPw.text += number;
+        _controllerNPw.text += number;
       } else {
-        controllerCPw.text += number;
+        _controllerCPw.text += number;
       }
     });
   }
 
   void deleteNumber() {
     setState(() {
-      if (activeField == 'new' && controllerNPw.text.isNotEmpty) {
-        controllerNPw.text = 
-            controllerNPw.text.substring(0, controllerNPw.text.length - 1);
-      } else if (activeField == 'confirm' && controllerCPw.text.isNotEmpty) {
-        controllerCPw.text = 
-            controllerCPw.text.substring(0, controllerCPw.text.length - 1);
+      if (activeField == 'new' && _controllerNPw.text.isNotEmpty) {
+        _controllerNPw.text = 
+            _controllerNPw.text.substring(0, _controllerNPw.text.length - 1);
+      } else if (activeField == 'confirm' && _controllerCPw.text.isNotEmpty) {
+        _controllerCPw.text = 
+            _controllerCPw.text.substring(0, _controllerCPw.text.length - 1);
       }
     });
   }
@@ -460,7 +503,7 @@ class _NewPasswordState extends State<NewPassword> {
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => const Home1(),
+                      builder: (context) => const Registration(),
                     )
                   );
                 },

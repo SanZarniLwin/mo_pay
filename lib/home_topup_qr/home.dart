@@ -191,23 +191,26 @@ class _HomeState extends State<Home> {
                         ],
                       ),
                     ),
-                    Column(
-                      children: [
-                        Container(
-                          height: 52,
-                          width: 52,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(100),
-                            color: Color.fromRGBO(102, 103, 170, 1),
+                    GestureDetector(
+                      onTap: _showBottomSheet,
+                      child: Column(
+                        children: [
+                          Container(
+                            height: 52,
+                            width: 52,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(100),
+                              color: Color.fromRGBO(102, 103, 170, 1),
+                            ),
+                            child: Image.asset('assets/images/more.png'),
                           ),
-                          child: Image.asset('assets/images/more.png'),
-                        ),
-                        SizedBox(height: 15,),
-                        Text(
-                          'More',
-                          style: textStyle1(),
-                        ),
-                      ],
+                          SizedBox(height: 15,),
+                          Text(
+                            'More',
+                            style: textStyle1(),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -372,6 +375,135 @@ class _HomeState extends State<Home> {
       fontSize: 14,
       fontWeight: FontWeight.w400,
       color: Color.fromRGBO(96, 96, 96, 1)
+    );
+  }
+
+  void _showBottomSheet() {
+    showModalBottomSheet(
+      context: context, 
+      builder: (context) {
+        return Container(
+          padding: EdgeInsets.fromLTRB(30, 60, 30, 50),
+          height: 374,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(30),
+              topRight: Radius.circular(30)
+            ),
+            color: Colors.white,
+          ),
+          child: Column(
+            spacing: 20,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: EdgeInsets.fromLTRB(30, 5, 30, 5),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(3),
+                        color: Color.fromRGBO(102, 103, 170, 0.08)
+                      ),
+                      child: Text('Wallet Services',style: textStyle4(),),
+                    ),
+                  )
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    spacing: 15,
+                    children: [
+                      Image.asset('assets/images/fundInOutWS.png'),
+                      Text('Fund In/\nOut',style: textStyle5(),textAlign: TextAlign.center,)
+                    ],
+                  ),
+                  Column(
+                    spacing: 15,
+                    children: [
+                      Image.asset('assets/images/qrWS.png'),
+                      Text('Receive',style: textStyle5(),)
+                    ],
+                  ),
+                  Column(
+                    spacing: 15,
+                    children: [
+                      Image.asset('assets/images/topUpWS.png'),
+                      Text('Top Up',style: textStyle5(),)
+                    ],
+                  ),
+                  Column(
+                    spacing: 15,
+                    children: [
+                      Image.asset('assets/images/nearWS.png'),
+                      Text('Near By',style: textStyle5(),)
+                    ],
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: EdgeInsets.fromLTRB(30, 5, 30, 5),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(3),
+                        color: Color.fromRGBO(102, 103, 170, 0.08)
+                      ),
+                      child: Text('Payment Services',style: textStyle4(),),
+                    ),
+                  )
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    spacing: 15,
+                    children: [
+                      Image.asset('assets/images/transferPS.png'),
+                      Text('Transfer',style: textStyle5(),)
+                    ],
+                  ),
+                  Column(
+                    spacing: 15,
+                    children: [
+                      Image.asset('assets/images/interBankPS.png'),
+                      Text('Interbank\nTransfer',style: textStyle5(),textAlign: TextAlign.center,)
+                    ],
+                  ),
+                  Column(
+                    spacing: 15,
+                    children: [
+                      Image.asset('assets/images/payBillPS.png'),
+                      Text('Pay\nBillpayments',style: textStyle5(),textAlign: TextAlign.center,)
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  TextStyle textStyle5() {
+    return TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
+      color: Color.fromRGBO(49, 49, 49, 1)
+    );
+  }
+
+  TextStyle textStyle4() {
+    return TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: Color.fromRGBO(49, 49, 49, 1)
     );
   }
 }

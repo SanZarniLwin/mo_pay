@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:mo_pay/forgot_password/otp_verify.dart';
+import 'package:mo_pay/home_topup_qr/home1.dart';
 
 class Registration extends StatefulWidget {
   const Registration({super.key});
@@ -9,6 +11,60 @@ class Registration extends StatefulWidget {
 }
 
 class _RegistrationState extends State<Registration> {
+
+  final TextEditingController _businessName = TextEditingController();
+  final TextEditingController _businessType = TextEditingController();
+  final TextEditingController _contactPN = TextEditingController();
+  final TextEditingController _contactPPN = TextEditingController();
+  final TextEditingController _message = TextEditingController();
+
+  bool agreed = false;
+  bool saving = false;
+
+  @override
+  void dispose() {
+    _businessName.dispose();
+    _businessType.dispose();
+    _contactPN.dispose();
+    _contactPPN.dispose();
+    _message.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      saving = true;
+    });
+    try {
+      if (!agreed) {
+        throw Exception('You need to agree to the Terms and Conditions.');
+      }
+      if (
+        _businessName.text.trim().isNotEmpty||
+        _businessType.text.trim().isNotEmpty||
+        _contactPN.text.trim().isNotEmpty||
+        _contactPPN.text.trim().isNotEmpty||
+        _message.text.trim().isNotEmpty
+      ) {
+        await FirebaseFirestore.instance.collection('registration').add({
+          'businessName': _businessName.text.trim(),
+          'businessType': _businessType.text.trim(),
+          'ContactPersonName': _contactPN.text.trim(),
+          'ContactPersonPhoneNumber': _contactPPN.text.trim(),
+          'Message': _message.text.trim(),
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+      _showSuccess();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed $e'))
+      );
+    } finally {
+      if (mounted) setState(() => saving = false,);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -108,6 +164,7 @@ class _RegistrationState extends State<Registration> {
                       ),
                       SizedBox(height: 10,),
                       TextField(
+                        controller: _businessName,
                         decoration: InputDecoration(
                           border: OutlineInputBorder(),
                         ),
@@ -123,6 +180,7 @@ class _RegistrationState extends State<Registration> {
                       ),
                       SizedBox(height: 10,),
                       TextField(
+                        controller: _businessType,
                         decoration: InputDecoration(
                           border: OutlineInputBorder(),
                         ),
@@ -138,6 +196,7 @@ class _RegistrationState extends State<Registration> {
                       ),
                       SizedBox(height: 10,),
                       TextField(
+                        controller: _contactPN,
                         decoration: InputDecoration(
                           border: OutlineInputBorder(),
                         ),
@@ -153,6 +212,7 @@ class _RegistrationState extends State<Registration> {
                       ),
                       SizedBox(height: 10,),
                       TextField(
+                        controller: _contactPPN,
                         decoration: InputDecoration(
                           border: OutlineInputBorder(),
                         ),
@@ -168,6 +228,7 @@ class _RegistrationState extends State<Registration> {
                       ),
                       SizedBox(height: 10,),
                       TextField(
+                        controller: _message,
                         maxLines: 4,
                         decoration: InputDecoration(
                           border: OutlineInputBorder(),
@@ -175,21 +236,30 @@ class _RegistrationState extends State<Registration> {
                       ),
                       SizedBox(height: 20,),
                       Center(
-                        child: TextButton(
-                          onPressed: _showTermsAndConditions, 
-                          child: Text(
-                            'I agree with the Terms & Conditions',
-                            style: TextStyle(
-                              color: Color.fromRGBO(102, 103, 170, 1),
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
+                        child: Row(
+                          children: [
+                            Checkbox(value: agreed, onChanged: (value) => setState(() => agreed = value ?? false,),),
+                            TextButton(
+                              onPressed: _showTermsAndConditions, 
+                              child: Text(
+                                'I agree with the Terms & Conditions',
+                                style: TextStyle(
+                                  color: Color.fromRGBO(102, 103, 170, 1),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              )
                             ),
-                          )
+                          ],
                         ),
                       ),
                       SizedBox(height: 8,),
                       GestureDetector(
-                        onTap: _showSuccess,
+                        onTap: () async {
+                          if (!saving) {
+                            await _save();
+                          }
+                        },
                         child: Container(
                           alignment: Alignment.center,
                           height: 56,
@@ -339,7 +409,7 @@ class _RegistrationState extends State<Registration> {
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => const OtpVerify(),
+                      builder: (context) => const Home1(),
                     )
                   );
                 },

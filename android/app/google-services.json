@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "125165301599",
+    "project_id": "mo-pay-1c8da",
+    "storage_bucket": "mo-pay-1c8da.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:125165301599:android:f06860c2e91245d9a190ea",
+        "android_client_info": {
+          "package_name": "com.example.mo_pay"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNKKEwM9cN6KaocB9QUslsQFTHerju6d0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

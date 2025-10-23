@@ -1,8 +1,45 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:mo_pay/registration_and_login/passcode.dart';
 
-class Login extends StatelessWidget {
+class Login extends StatefulWidget {
   const Login({super.key});
+
+  @override
+  State<Login> createState() => _LoginState();
+}
+
+class _LoginState extends State<Login> {
+
+  final TextEditingController _controller = TextEditingController();
+
+  bool saving = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() {
+      saving = true;
+    });
+    try {
+      if (_controller.text.trim().isNotEmpty) {
+        await FirebaseFirestore.instance.collection('login').add({
+          'loginPhone': _controller.text.trim(),
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => saving = false,);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,7 +148,7 @@ class Login extends StatelessWidget {
                         SizedBox(width: 20,),
                         Expanded(
                           child: TextField(
-                            controller: TextEditingController(),
+                            controller: _controller,
                             decoration: InputDecoration(
                               hintText: 'Enter mobile number',
                             ),
@@ -121,12 +158,13 @@ class Login extends StatelessWidget {
                     ),
                     SizedBox(height: 20,),
                     GestureDetector(
-                      onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const Passcode(),
-                          )
-                        );
+                      onTap: () async {
+                        if (!saving) {
+                          await _save();
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (context) => const Passcode()),
+                          );
+                        }
                       },
                       child: Container(
                         alignment: Alignment.center,
@@ -134,11 +172,11 @@ class Login extends StatelessWidget {
                         width: double.infinity,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
-                          color: Color.fromRGBO(102, 103, 170, 1)
+                          color: const Color.fromRGBO(102, 103, 170, 1),
                         ),
                         child: Text(
-                          'Log In',
-                          style: TextStyle(
+                          saving ? 'Saving...' : 'Log In',
+                          style: const TextStyle(
                             color: Colors.white,
                             fontSize: 20,
                             fontWeight: FontWeight.w700,

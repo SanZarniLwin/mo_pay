@@ -1,7 +1,59 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:mo_pay/home_topup_qr/home1.dart';
+import 'package:provider/provider.dart';
+
+class data extends ChangeNotifier{
+
+  final TextEditingController businessName = TextEditingController();
+  final TextEditingController businessType = TextEditingController();
+  final TextEditingController contactPN = TextEditingController();
+  final TextEditingController contactPPN = TextEditingController();
+  final TextEditingController message = TextEditingController();
+
+  bool agreed = false;
+  bool saving = false;
+
+  @override
+  void dispose() {
+    businessName.dispose();
+    businessType.dispose();
+    contactPN.dispose();
+    contactPPN.dispose();
+    message.dispose();
+    super.dispose();
+  }
+
+  Future<void> saveToFire() async {
+    saving = true; notifyListeners();
+    try {
+      if (!agreed) {
+        throw Exception('You need to agree Terms and Conditions');
+      }
+      if (
+        businessName.text.trim().isNotEmpty ||
+        businessType.text.trim().isNotEmpty ||
+        contactPN.text.trim().isNotEmpty ||
+        contactPPN.text.trim().isNotEmpty ||
+        message.text.trim().isNotEmpty
+      ) {
+        await FirebaseFirestore.instance.collection('registration').add({
+          'businessName': businessName.text.trim(),
+          'businessType': businessType.text.trim(),
+          'ContactPersonName': contactPN.text.trim(),
+          'ContactPersonPhoneNumber': contactPPN.text.trim(),
+          'Message': message.text.trim(),
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e) {
+      SnackBar(content: Text('Failed $e'));
+    }
+    saving = false;
+    notifyListeners();
+  }
+
+}
 
 class Registration extends StatefulWidget {
   const Registration({super.key});
@@ -12,280 +64,267 @@ class Registration extends StatefulWidget {
 
 class _RegistrationState extends State<Registration> {
 
-  final TextEditingController _businessName = TextEditingController();
-  final TextEditingController _businessType = TextEditingController();
-  final TextEditingController _contactPN = TextEditingController();
-  final TextEditingController _contactPPN = TextEditingController();
-  final TextEditingController _message = TextEditingController();
-
-  bool agreed = false;
-  bool saving = false;
-
-  @override
-  void dispose() {
-    _businessName.dispose();
-    _businessType.dispose();
-    _contactPN.dispose();
-    _contactPPN.dispose();
-    _message.dispose();
-    super.dispose();
-  }
-
-  Future<void> _save() async {
-    setState(() {
-      saving = true;
-    });
-    try {
-      if (!agreed) {
-        throw Exception('You need to agree to the Terms and Conditions.');
-      }
-      if (
-        _businessName.text.trim().isNotEmpty||
-        _businessType.text.trim().isNotEmpty||
-        _contactPN.text.trim().isNotEmpty||
-        _contactPPN.text.trim().isNotEmpty||
-        _message.text.trim().isNotEmpty
-      ) {
-        await FirebaseFirestore.instance.collection('registration').add({
-          'businessName': _businessName.text.trim(),
-          'businessType': _businessType.text.trim(),
-          'ContactPersonName': _contactPN.text.trim(),
-          'ContactPersonPhoneNumber': _contactPPN.text.trim(),
-          'Message': _message.text.trim(),
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-      }
-      _showSuccess();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed $e'))
-      );
-    } finally {
-      if (mounted) setState(() => saving = false,);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        child: Column(
-          children: [
-            Container(
-              padding: EdgeInsets.fromLTRB(30, 70, 30, 30),
-              height: 249,
-              decoration: BoxDecoration(
-                image: DecorationImage(
-                  image: AssetImage('assets/images/regiBg.png'),
-                  fit: BoxFit.fitWidth,
-                ),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+    return ChangeNotifierProvider.value(
+      value: data(),
+      builder: (context, _) {
+        return Scaffold(
+          body: Container(
+            child: Column(
+              children: [
+                Container(
+                  padding: EdgeInsets.fromLTRB(30, 70, 30, 30),
+                  height: 249,
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage('assets/images/regiBg.png'),
+                      fit: BoxFit.fitWidth,
+                    ),
+                  ),
+                  child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      IconButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        }, 
-                        icon: Image.asset('assets/images/back.png')
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'your pay  ',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          Text(
-                            'Mo payment',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Column(
+                      Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Application',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 24,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          IconButton(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                            }, 
+                            icon: Image.asset('assets/images/back.png')
                           ),
-                          SizedBox(height: 8,),
-                          Text(
-                            'Register Your Business',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w400,
-                            ),
-                          )
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                'your pay  ',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                'Mo payment',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w400,
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: Container(
-                color: Colors.white,
-                padding: EdgeInsets.fromLTRB(30, 50, 30, 50),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Business Name',
-                        style: TextStyle(
-                          color: Color.fromRGBO(96, 96, 96, 1),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      SizedBox(height: 10,),
-                      TextField(
-                        controller: _businessName,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      SizedBox(height: 20,),
-                      Text(
-                        'Business Type',
-                        style: TextStyle(
-                          color: Color.fromRGBO(96, 96, 96, 1),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      SizedBox(height: 10,),
-                      TextField(
-                        controller: _businessType,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      SizedBox(height: 20,),
-                      Text(
-                        'Contact Person Name',
-                        style: TextStyle(
-                          color: Color.fromRGBO(96, 96, 96, 1),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      SizedBox(height: 10,),
-                      TextField(
-                        controller: _contactPN,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      SizedBox(height: 20,),
-                      Text(
-                        'Contact Person Phone Number',
-                        style: TextStyle(
-                          color: Color.fromRGBO(96, 96, 96, 1),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      SizedBox(height: 10,),
-                      TextField(
-                        controller: _contactPPN,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      SizedBox(height: 20,),
-                      Text(
-                        'Message',
-                        style: TextStyle(
-                          color: Color.fromRGBO(96, 96, 96, 1),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                      SizedBox(height: 10,),
-                      TextField(
-                        controller: _message,
-                        maxLines: 4,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                      SizedBox(height: 20,),
-                      Center(
-                        child: Row(
-                          children: [
-                            Checkbox(value: agreed, onChanged: (value) => setState(() => agreed = value ?? false,),),
-                            TextButton(
-                              onPressed: _showTermsAndConditions, 
-                              child: Text(
-                                'I agree with the Terms & Conditions',
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Application',
                                 style: TextStyle(
-                                  color: Color.fromRGBO(102, 103, 170, 1),
+                                  color: Colors.white,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              SizedBox(height: 8,),
+                              Text(
+                                'Register Your Business',
+                                style: TextStyle(
+                                  color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w400,
                                 ),
                               )
-                            ),
-                          ],
-                        ),
+                            ],
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 8,),
-                      GestureDetector(
-                        onTap: () async {
-                          if (!saving) {
-                            await _save();
-                          }
-                        },
-                        child: Container(
-                          alignment: Alignment.center,
-                          height: 56,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(15),
-                            color: Color.fromRGBO(102, 103, 170, 1)
-                          ),
-                          child: Text(
-                            'Next',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      )
                     ],
                   ),
                 ),
-              ),
+                Expanded(
+                  child: Container(
+                    color: Colors.white,
+                    padding: EdgeInsets.fromLTRB(30, 50, 30, 50),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Business Name',
+                            style: TextStyle(
+                              color: Color.fromRGBO(96, 96, 96, 1),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          SizedBox(height: 10,),
+                          Consumer<data>(
+                            builder: (context, value, child) {
+                              return TextField(
+                                controller: value.businessName,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                ),
+                              );
+                            }
+                          ),
+                          SizedBox(height: 20,),
+                          Text(
+                            'Business Type',
+                            style: TextStyle(
+                              color: Color.fromRGBO(96, 96, 96, 1),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          SizedBox(height: 10,),
+                          Consumer<data>(
+                            builder: (context, value, child) {
+                              return TextField(
+                                controller: value.businessType,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                ),
+                              );
+                            }
+                          ),
+                          SizedBox(height: 20,),
+                          Text(
+                            'Contact Person Name',
+                            style: TextStyle(
+                              color: Color.fromRGBO(96, 96, 96, 1),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          SizedBox(height: 10,),
+                          Consumer<data>(
+                            builder: (context, value, child) {
+                              return TextField(
+                                controller: value.contactPN,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                ),
+                              );
+                            }
+                          ),
+                          SizedBox(height: 20,),
+                          Text(
+                            'Contact Person Phone Number',
+                            style: TextStyle(
+                              color: Color.fromRGBO(96, 96, 96, 1),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          SizedBox(height: 10,),
+                          Consumer<data>(
+                            builder: (context, value, child) {
+                              return TextField(
+                                controller: value.contactPPN,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                ),
+                              );
+                            }
+                          ),
+                          SizedBox(height: 20,),
+                          Text(
+                            'Message',
+                            style: TextStyle(
+                              color: Color.fromRGBO(96, 96, 96, 1),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          SizedBox(height: 10,),
+                          Consumer<data>(
+                            builder: (context, value, child) {
+                              return TextField(
+                                controller: value.message,
+                                maxLines: 4,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                ),
+                              );
+                            }
+                          ),
+                          SizedBox(height: 20,),
+                          Center(
+                            child: Row(
+                              children: [
+                                Consumer<data>(
+                                  builder: (context, provider, child) {
+                                    return Checkbox(
+                                      value: provider.agreed, 
+                                      onChanged: (value) {
+                                        provider.agreed = value ?? false;
+                                        provider.notifyListeners();
+                                      },
+                                    );
+                                  }
+                                ),
+                                TextButton(
+                                  onPressed: _showTermsAndConditions, 
+                                  child: Text(
+                                    'I agree with the Terms & Conditions',
+                                    style: TextStyle(
+                                      color: Color.fromRGBO(102, 103, 170, 1),
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  )
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 8,),
+                          Consumer<data>(
+                            builder: (context, value, child) {
+                              return GestureDetector(
+                                onTap: () async {
+                                  if (!value.saving) {
+                                    await value.saveToFire();
+                                  }
+                                  _showSuccess();
+                                },
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  height: 56,
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(15),
+                                    color: Color.fromRGBO(102, 103, 170, 1)
+                                  ),
+                                  child: Text(
+                                    'Next',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      }
     );
   }
 

@@ -42,7 +42,8 @@ class data extends ChangeNotifier{
 }
 
 class IdVerify extends StatefulWidget {
-  const IdVerify({super.key});
+  final phoneNumber;
+  const IdVerify({super.key, required this.phoneNumber});
 
   @override
   State<IdVerify> createState() => _IdVerifyState();
@@ -182,7 +183,7 @@ class _IdVerifyState extends State<IdVerify> {
                               onTap: () {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (context) => const Passport(),
+                                    builder: (context) => Passport(phoneNumber: widget.phoneNumber,),
                                   )
                                 );
                               },
@@ -309,7 +310,7 @@ class _IdVerifyState extends State<IdVerify> {
                                 await value.save();
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (context) => const SecurityQuestion(),
+                                    builder: (context) => SecurityQuestion(phoneNumber: widget.phoneNumber),
                                   )
                                 );
                               }

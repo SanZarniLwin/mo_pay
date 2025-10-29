@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:mo_pay/registration_and_login/passcode.dart';
 import 'package:provider/provider.dart';
 
-class data extends ChangeNotifier{
+class Data extends ChangeNotifier{
   
   final TextEditingController controller = TextEditingController();
 
@@ -15,17 +15,33 @@ class data extends ChangeNotifier{
     super.dispose();
   }
 
-  Future<void> save() async {
-    try {
-      if (controller.text.trim().isNotEmpty) {
-        await FirebaseFirestore.instance.collection('login').add({
-          'loginPhone': controller.text.trim(),
-          'createdAt': FieldValue.serverTimestamp(),
-        });
-      }
-    } catch (e) {
-      SnackBar(content: Text('Failed $e'));
+  Future<void> checkAndSave(BuildContext context) async {
+    final phoneNumber = controller.text.trim();
+
+    if (phoneNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('You need to enter the phone number.'))
+      );
     }
+
+    final existingUser = await FirebaseFirestore.instance.collection('login')
+          .where('loginPhone', isEqualTo: phoneNumber)
+          .limit(1)
+          .get();
+
+    if (existingUser.docs.isEmpty) {
+      await FirebaseFirestore.instance.collection('login').add({
+        'loginPhone': phoneNumber,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => Passcode(phoneNumber: phoneNumber,),
+      )
+    );
+
   }
 
 }
@@ -40,8 +56,8 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: data(),
+    return ChangeNotifierProvider(
+      create: (context) => Data(),
       builder: (context, _) {
         return Scaffold(
           body: Container(
@@ -147,7 +163,7 @@ class _LoginState extends State<Login> {
                             ),
                             SizedBox(width: 20,),
                             Expanded(
-                              child: Consumer<data>(
+                              child: Consumer<Data>(
                                 builder: (context, value, child) {
                                   return TextField(
                                     controller: value.controller,
@@ -161,15 +177,12 @@ class _LoginState extends State<Login> {
                           ],
                         ),
                         SizedBox(height: 20,),
-                        Consumer<data>(
+                        Consumer<Data>(
                           builder: (context, value, child) {
                             return GestureDetector(
                               onTap: () async {
                                 if (!value.saving) {
-                                  await value.save();
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(builder: (context) => const Passcode()),
-                                  );
+                                  await value.checkAndSave(context);
                                 }
                               },
                               child: Container(

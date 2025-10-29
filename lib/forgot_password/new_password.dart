@@ -1,457 +1,72 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:mo_pay/registration_and_login/registration.dart';
+import 'package:mo_pay/registration_and_login/login.dart';
+import 'package:provider/provider.dart';
 
-class NewPassword extends StatefulWidget {
-  const NewPassword({super.key});
+class data extends ChangeNotifier{
 
-  @override
-  State<NewPassword> createState() => _NewPasswordState();
-}
+  String activeField = 'new';
 
-class _NewPasswordState extends State<NewPassword> {
-  
-  String activeField = "new";
-  final TextEditingController _controllerNPw = TextEditingController();
-  final TextEditingController _controllerCPw = TextEditingController();
+  final TextEditingController controllerNPw = TextEditingController();
+  final TextEditingController controllerCPw = TextEditingController();
 
   bool saving = false;
 
   @override
   void dispose() {
-    _controllerNPw.dispose();
-    _controllerCPw.dispose();
+    controllerNPw.dispose();
+    controllerCPw.dispose();
     super.dispose();
   }
 
-  Future<void> _save() async {
-    setState(() {
-      saving = true;
-    });
+  Future<void> save(String phoneNumber, BuildContext context) async {
     try {
+      if (controllerNPw.text.length != 6) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Passwords need to be 6 digits'))
+        );
+        return ;
+      }
+      if (controllerNPw.text.trim() != controllerCPw.text.trim()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Passwords need to be the same.'))
+        );
+        return;
+      }
       if (
-        _controllerNPw.text.trim() == _controllerCPw.text.trim() &&
-        _controllerNPw.text.trim().isNotEmpty&&
-        _controllerCPw.text.trim().isNotEmpty
+        controllerNPw.text.length == 6 &&
+        controllerNPw.text.trim() == controllerCPw.text.trim()&&
+        controllerNPw.text.trim().isNotEmpty&&
+        controllerCPw.text.trim().isNotEmpty
       ) {
-        await FirebaseFirestore.instance.collection('newpassword').add({
-          'NewPassword': _controllerNPw.text.trim(),
-          'ConfirmPassword': _controllerCPw.text.trim(),
+        await FirebaseFirestore.instance.collection('passcode').doc(phoneNumber).set({
+          'Passcode': controllerNPw.text.trim(),
           'createdAt': FieldValue.serverTimestamp()
         });
       }
-      if (_controllerNPw.text.trim() != _controllerCPw.text.trim()) {
-        throw Exception('Passwords need to be the same');
-      }
-      _passwordUpdate();
+      _passwordUpdate(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed $e'))
-      );
-    } finally {
-      if (mounted) {setState(() => saving = false,);}
+      SnackBar(content: Text('Failed $e'),);
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.fromLTRB(30, 50, 30, 10),
-            height: 249,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: ExactAssetImage('assets/images/otpBg.png'),
-                fit: BoxFit.fitWidth,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(), 
-                      icon: Image.asset('assets/images/back.png'),
-                    )
-                  ],
-                ),
-                SizedBox(height: 40,),
-                Text(
-                  'Create New Password',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w500
-                  ),
-                ),
-                SizedBox(height: 8,),
-                Text(
-                  'It will used for payment and send money',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: Container(
-              padding: EdgeInsets.fromLTRB(30, 30, 30, 0),
-              color: Colors.white,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: EdgeInsets.fromLTRB(20, 15, 20, 15),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(2),
-                      color: Color.fromRGBO(102, 103, 170, 0.3)
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          height: 25,
-                          width: 25,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(100),
-                            color: Color.fromRGBO(102, 103, 170, 1),
-                          ),
-                          child: Image.asset('assets/images/ex.png'),
-                        ),
-                        Container(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'New password must be different from\nprevious password',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: Color.fromRGBO(102, 103, 170, 1)
-                            ),
-                          )
-                        )
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 20,),
-                  Text(
-                    'New password',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: Color.fromRGBO(96, 96, 96, 1)
-                    ),
-                  ),
-                  TextField(
-                    controller: _controllerNPw,
-                    readOnly: true,
-                    onTap: () {
-                      setState(() {
-                        activeField = 'new';
-                      });
-                    },
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder()
-                    ),
-                  ),
-                  SizedBox(height: 20,),
-                  Text(
-                    'Confirmed password',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w400,
-                      color: Color.fromRGBO(96, 96, 96, 1)
-                    ),
-                  ),
-                  TextField(
-                    controller: _controllerCPw,
-                    readOnly: true,
-                    onTap: () {
-                      setState(() {
-                        activeField = 'confirm';
-                      });
-                    },
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder()
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Container(
-            padding: EdgeInsets.fromLTRB(15, 15, 15, 30),
-            color: Color.fromRGBO(242, 242, 242, 1),
-            alignment: Alignment.bottomRight,
-            child: Column(
-              spacing: 10,
-              children: [
-                Row(
-                  spacing: 10,
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => onNumberPressed('1'),
-                        child: Container(
-                          height: 50,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.white,
-                          ),
-                          child: Text(
-                            '1', 
-                            style: numStyle(),
-                          )
-                        ),
-                      )
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => onNumberPressed('2'),
-                        child: Container(
-                          height: 50,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.white,
-                          ),
-                          child: Text(
-                            '2', 
-                            style: numStyle(),
-                          )
-                        ),
-                      )
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => onNumberPressed('3'),
-                        child: Container(
-                          height: 50,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.white,
-                          ),
-                          child: Text(
-                            '3', 
-                            style: numStyle(),
-                          )
-                        ),
-                      )
-                    ),                          ],
-                ),
-                Row(
-                  spacing: 10,
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => onNumberPressed('4'),
-                        child: Container(
-                          height: 50,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.white,
-                          ),
-                          child: Text(
-                            '4', 
-                            style: numStyle(),
-                          )
-                        ),
-                      )
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => onNumberPressed('5'),
-                        child: Container(
-                          height: 50,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.white,
-                          ),
-                          child: Text(
-                            '5', 
-                            style: numStyle(),
-                          )
-                        ),
-                      )
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => onNumberPressed('6'),
-                        child: Container(
-                          height: 50,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.white,
-                          ),
-                          child: Text(
-                            '6', 
-                            style: numStyle(),
-                          )
-                        ),
-                      )
-                    ),                          ],
-                ),
-                Row(
-                  spacing: 10,
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => onNumberPressed('7'),
-                        child: Container(
-                          height: 50,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.white,
-                          ),
-                          child: Text(
-                            '7', 
-                            style: numStyle(),
-                          )
-                        ),
-                      )
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => onNumberPressed('8'),
-                        child: Container(
-                          height: 50,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.white,
-                          ),
-                          child: Text(
-                            '8', 
-                            style: numStyle(),
-                          )
-                        ),
-                      )
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => onNumberPressed('9'),
-                        child: Container(
-                          height: 50,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.white,
-                          ),
-                          child: Text(
-                            '9', 
-                            style: numStyle(),
-                          )
-                        ),
-                      )
-                    ),                          ],
-                ),
-                Row(
-                  spacing: 10,
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () async {
-                          if (!saving) {
-                            await _save();
-                          }
-                        },
-                        child: Container(
-                          height: 50,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.white,
-                          ),
-                          child: Text(
-                            'Confirm',
-                          )
-                        ),
-                      )
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => onNumberPressed('0'),
-                        child: Container(
-                          height: 50,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.white,
-                          ),
-                          child: Text(
-                            '0', 
-                            style: numStyle(),
-                          )
-                        ),
-                      )
-                    ),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => deleteNumber(),
-                        child: Container(
-                          height: 50,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: Colors.white,
-                          ),
-                          child: Icon(Icons.backspace)
-                        ),
-                      )
-                    ),                          
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  TextStyle numStyle() {
-    return TextStyle(
-      fontSize: 22, 
-      fontWeight: FontWeight.w700,
-      color: Color.fromRGBO(67, 84, 92, 1)
-    );
-  }
-
   void onNumberPressed(String number) {
-    setState(() {
-      if (activeField == 'new') {
-        _controllerNPw.text += number;
-      } else {
-        _controllerCPw.text += number;
-      }
-    });
+    if (activeField == 'new') {
+      controllerNPw.text += number;
+    } else {
+      controllerCPw.text += number;
+    }
   }
 
   void deleteNumber() {
-    setState(() {
-      if (activeField == 'new' && _controllerNPw.text.isNotEmpty) {
-        _controllerNPw.text = 
-            _controllerNPw.text.substring(0, _controllerNPw.text.length - 1);
-      } else if (activeField == 'confirm' && _controllerCPw.text.isNotEmpty) {
-        _controllerCPw.text = 
-            _controllerCPw.text.substring(0, _controllerCPw.text.length - 1);
-      }
-    });
+    if (activeField == 'new' && controllerNPw.text.isNotEmpty) {
+      controllerNPw.text = controllerNPw.text.substring(0, controllerNPw.text.length - 1);
+    } else if (activeField == 'confirm' && controllerCPw.text.isNotEmpty) {
+      controllerCPw.text = controllerCPw.text.substring(0, controllerCPw.text.length - 1);
+    }
   }
 
-  void _passwordUpdate() {
+  void _passwordUpdate(BuildContext context) {
     showDialog(
       context: context, 
       builder: (context) => AlertDialog(
@@ -503,7 +118,7 @@ class _NewPasswordState extends State<NewPassword> {
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => const Registration(),
+                      builder: (context) => Login(),
                     )
                   );
                 },
@@ -531,4 +146,412 @@ class _NewPasswordState extends State<NewPassword> {
       ),
     );
   }
+
+}
+
+class NewPassword extends StatefulWidget {
+  final phoneNumber;
+  const NewPassword({super.key, required this.phoneNumber});
+
+  @override
+  State<NewPassword> createState() => _NewPasswordState();
+}
+
+class _NewPasswordState extends State<NewPassword> {
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider.value(
+      value: data(),
+      builder: (context, _) {
+        return Scaffold(
+          body: Column(
+            children: [
+              Container(
+                padding: EdgeInsets.fromLTRB(30, 50, 30, 10),
+                height: 249,
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: ExactAssetImage('assets/images/otpBg.png'),
+                    fit: BoxFit.fitWidth,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(), 
+                          icon: Image.asset('assets/images/back.png'),
+                        )
+                      ],
+                    ),
+                    SizedBox(height: 40,),
+                    Text(
+                      'Create New Password',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w500
+                      ),
+                    ),
+                    SizedBox(height: 8,),
+                    Text(
+                      'It will used for payment and send money',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Container(
+                  padding: EdgeInsets.fromLTRB(30, 30, 30, 0),
+                  color: Colors.white,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.fromLTRB(20, 15, 20, 15),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(2),
+                          color: Color.fromRGBO(102, 103, 170, 0.3)
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              height: 25,
+                              width: 25,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(100),
+                                color: Color.fromRGBO(102, 103, 170, 1),
+                              ),
+                              child: Image.asset('assets/images/ex.png'),
+                            ),
+                            Container(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'New password must be different from\nprevious password',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color.fromRGBO(102, 103, 170, 1)
+                                ),
+                              )
+                            )
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 20,),
+                      Text(
+                        'New password',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          color: Color.fromRGBO(96, 96, 96, 1)
+                        ),
+                      ),
+                      Consumer<data>(
+                        builder: (context, value, child) {
+                          return TextField(
+                            controller: value.controllerNPw,
+                            readOnly: true,
+                            onTap: () {
+                              value.activeField = 'new';
+                            },
+                            decoration: InputDecoration(
+                              border: UnderlineInputBorder()
+                            ),
+                          );
+                        }
+                      ),
+                      SizedBox(height: 20,),
+                      Text(
+                        'Confirmed password',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          color: Color.fromRGBO(96, 96, 96, 1)
+                        ),
+                      ),
+                      Consumer<data>(
+                        builder: (context, value, child) {
+                          return TextField(
+                            controller: value.controllerCPw,
+                            readOnly: true,
+                            onTap: () {
+                              value.activeField = 'confirm';
+                            },
+                            decoration: InputDecoration(
+                              border: UnderlineInputBorder()
+                            ),
+                          );
+                        }
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Consumer<data>(
+                builder: (context, value, child) {
+                  return Container(
+                    padding: EdgeInsets.fromLTRB(15, 15, 15, 30),
+                    color: Color.fromRGBO(242, 242, 242, 1),
+                    alignment: Alignment.bottomRight,
+                    child: Column(
+                      spacing: 10,
+                      children: [
+                        Row(
+                          spacing: 10,
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => value.onNumberPressed('1'),
+                                child: Container(
+                                  height: 50,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.white,
+                                  ),
+                                  child: Text(
+                                    '1', 
+                                    style: numStyle(),
+                                  )
+                                ),
+                              )
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => value.onNumberPressed('2'),
+                                child: Container(
+                                  height: 50,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.white,
+                                  ),
+                                  child: Text(
+                                    '2', 
+                                    style: numStyle(),
+                                  )
+                                ),
+                              )
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => value.onNumberPressed('3'),
+                                child: Container(
+                                  height: 50,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.white,
+                                  ),
+                                  child: Text(
+                                    '3', 
+                                    style: numStyle(),
+                                  )
+                                ),
+                              )
+                            ),                          ],
+                        ),
+                        Row(
+                          spacing: 10,
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => value.onNumberPressed('4'),
+                                child: Container(
+                                  height: 50,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.white,
+                                  ),
+                                  child: Text(
+                                    '4', 
+                                    style: numStyle(),
+                                  )
+                                ),
+                              )
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => value.onNumberPressed('5'),
+                                child: Container(
+                                  height: 50,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.white,
+                                  ),
+                                  child: Text(
+                                    '5', 
+                                    style: numStyle(),
+                                  )
+                                ),
+                              )
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => value.onNumberPressed('6'),
+                                child: Container(
+                                  height: 50,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.white,
+                                  ),
+                                  child: Text(
+                                    '6', 
+                                    style: numStyle(),
+                                  )
+                                ),
+                              )
+                            ),                          
+                          ],
+                        ),
+                        Row(
+                          spacing: 10,
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => value.onNumberPressed('7'),
+                                child: Container(
+                                  height: 50,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.white,
+                                  ),
+                                  child: Text(
+                                    '7', 
+                                    style: numStyle(),
+                                  )
+                                ),
+                              )
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => value.onNumberPressed('8'),
+                                child: Container(
+                                  height: 50,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.white,
+                                  ),
+                                  child: Text(
+                                    '8', 
+                                    style: numStyle(),
+                                  )
+                                ),
+                              )
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => value.onNumberPressed('9'),
+                                child: Container(
+                                  height: 50,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.white,
+                                  ),
+                                  child: Text(
+                                    '9', 
+                                    style: numStyle(),
+                                  )
+                                ),
+                              )
+                            ),                          
+                          ],
+                        ),
+                        Row(
+                          spacing: 10,
+                          children: [
+                            Expanded(
+                              child: Consumer<data>(
+                                builder: (context, value, child) {
+                                  return GestureDetector(
+                                    onTap: () async {
+                                      if (!value.saving) {
+                                        await value.save(widget.phoneNumber, context);
+                                      }
+                                    },
+                                    child: Container(
+                                      height: 50,
+                                      alignment: Alignment.center,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(8),
+                                        color: Colors.white,
+                                      ),
+                                      child: Text(
+                                        'Confirm',
+                                      )
+                                    ),
+                                  );
+                                }
+                              )
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => value.onNumberPressed('0'),
+                                child: Container(
+                                  height: 50,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.white,
+                                  ),
+                                  child: Text(
+                                    '0', 
+                                    style: numStyle(),
+                                  )
+                                ),
+                              )
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => value.deleteNumber(),
+                                child: Container(
+                                  height: 50,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.white,
+                                  ),
+                                  child: Icon(Icons.backspace)
+                                ),
+                              )
+                            ),                          
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              ),
+            ],
+          ),
+        );
+      }
+    );
+  }
+
+  TextStyle numStyle() {
+    return TextStyle(
+      fontSize: 22, 
+      fontWeight: FontWeight.w700,
+      color: Color.fromRGBO(67, 84, 92, 1)
+    );
+  }
+
 }

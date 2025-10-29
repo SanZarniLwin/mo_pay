@@ -2,10 +2,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mo_pay/forgot_password/otp_verify.dart';
+import 'package:mo_pay/home_topup_qr/home1.dart';
 import 'package:mo_pay/registration_and_login/registration.dart';
 import 'package:provider/provider.dart';
 
-class data extends ChangeNotifier{
+class Data extends ChangeNotifier{
 
   final TextEditingController controller1 = TextEditingController();
   final TextEditingController controller2 = TextEditingController();
@@ -27,30 +28,36 @@ class data extends ChangeNotifier{
     super.dispose();
   }
 
-  Future<void> save() async {
-    try {
-      if (
-        controller1.text.trim().isNotEmpty&&
-        controller2.text.trim().isNotEmpty&&
-        controller3.text.trim().isNotEmpty&&
-        controller4.text.trim().isNotEmpty&&
-        controller5.text.trim().isNotEmpty&&
-        controller6.text.trim().isNotEmpty
-      ) {
-        await FirebaseFirestore.instance.collection('passcode').add({
-          'Passcode': ('${controller1.text.trim()}${controller2.text.trim()}${controller3.text.trim()}${controller4.text.trim()}${controller5.text.trim()}${controller6.text.trim()}'),
-          'createdAt': FieldValue.serverTimestamp()
-        });
-      }
-    } catch (e) {
-      SnackBar(content: Text('Failed $e'));
-    }
+  String get passcodeValue => 
+  '${controller1.text.trim()}${controller2.text.trim()}${controller3.text.trim()}${controller4.text.trim()}${controller5.text.trim()}${controller6.text.trim()}';
+
+  Future<bool> existingPasscode(String phoneNumber) async {
+    final doc = await FirebaseFirestore.instance.collection('passcode')
+          .doc(phoneNumber)
+          .get();
+    return doc.exists;
+  }
+
+  Future<void> savePasscode(String phoneNumber) async {
+    await FirebaseFirestore.instance.collection('passcode').doc(phoneNumber).set({
+      'Passcode': passcodeValue,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<bool> verifyPasscode(String phoneNumber) async {
+    final doc = await FirebaseFirestore.instance.collection('passcode')
+          .doc(phoneNumber)
+          .get();
+    if (!doc.exists) return false;
+    return doc['Passcode'] == passcodeValue;
   }
 
 }
 
 class Passcode extends StatefulWidget {
-  const Passcode({super.key});
+  final phoneNumber;
+  const Passcode({super.key, required this.phoneNumber});
 
   @override
   State<Passcode> createState() => _PasscodeState();
@@ -61,7 +68,7 @@ class _PasscodeState extends State<Passcode> {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
-      value: data(),
+      value: Data(),
       builder: (context, _) {
         return Scaffold(
           body: Container(
@@ -166,7 +173,7 @@ class _PasscodeState extends State<Passcode> {
                           )
                         ),
                         SizedBox(height: 30,),
-                        Consumer<data>(
+                        Consumer<Data>(
                           builder: (context, value, child) {
                             return Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -205,7 +212,7 @@ class _PasscodeState extends State<Passcode> {
                             onPressed: () {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (context) => const OtpVerify(),
+                                  builder: (context) => OtpVerify(phoneNumber: widget.phoneNumber,),
                                 )
                               );
                             }, 
@@ -221,17 +228,38 @@ class _PasscodeState extends State<Passcode> {
                         ),
                         SizedBox(height: 209,),
                         Center(
-                          child: Consumer<data>(
+                          child: Consumer<Data>(
                             builder: (context, value, child) {
                               return TextButton(
                                 onPressed: () async {
-                                  if (!value.saving) {
-                                    await value.save();
+                                  String code = value.passcodeValue;
+                                  if (code.length != 6) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Passwords need to be 6 digits.'))
+                                    );
+                                    return;
+                                  } 
+                                  bool exists = await value.existingPasscode(widget.phoneNumber);
+                                  if (!exists) {
+                                    await value.savePasscode(widget.phoneNumber);
                                     Navigator.of(context).push(
                                       MaterialPageRoute(
                                         builder: (context) => const Registration(),
                                       )
                                     );
+                                  } else {
+                                    bool correct = await value.verifyPasscode(widget.phoneNumber);
+                                    if (correct) {
+                                      Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (context) => const Home1(),
+                                        )
+                                      );
+                                    } else {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(content: Text('Your passcode is wrong'))
+                                      );
+                                    }
                                   }
                                 },
                                 child: Text(

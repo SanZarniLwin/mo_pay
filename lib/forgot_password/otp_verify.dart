@@ -42,7 +42,8 @@ class data extends ChangeNotifier{
 }
 
 class OtpVerify extends StatefulWidget {
-  const OtpVerify({super.key});
+  final phoneNumber;
+  const OtpVerify({super.key, required this.phoneNumber});
 
   @override
   State<OtpVerify> createState() => _OtpVerifyState();
@@ -214,7 +215,7 @@ class _OtpVerifyState extends State<OtpVerify> {
                                 await value.save();
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (context) => const IdVerify(),
+                                    builder: (context) => IdVerify(phoneNumber: widget.phoneNumber,),
                                   )
                                 );
                               }
